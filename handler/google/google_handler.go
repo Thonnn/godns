@@ -78,12 +78,16 @@ func (handler *Handler) DomainLoop(domain *godns.Domain, panicChan chan<- godns.
 func (handler *Handler) UpdateIP(domain, subDomain, currentIP string) {
 	values := url.Values{}
 	values.Add("hostname", fmt.Sprintf("%s.%s", subDomain, domain))
-	values.Add("username:password", fmt.Sprintf("%s:%s", handler.Configuration.Email, handler.Configuration.Password))
 	values.Add("myip", currentIP)
 
 	client := godns.GetHttpClient(handler.Configuration)
-
 	req, _ := http.NewRequest("POST", GoogleUrl, strings.NewReader(values.Encode()))
+	req.SetBasicAuth(handler.Configuration.Email, handler.Configuration.Password)
+
+	if handler.Configuration.UserAgent != "" {
+		req.Header.Add("User-Agent", handler.Configuration.UserAgent)
+	}
+
 	resp, err := client.Do(req)
 
 	if err != nil {
